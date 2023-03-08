@@ -1,0 +1,9 @@
+CREATE OR REPLACE FUNCTION createUserId
+    RETURN NUMBER AS
+    userCount NUMBER;
+    BEGIN
+        SELECT COUNT(*)
+        INTO userCount
+        FROM users;
+        RETURN userCount + 1;
+    END;
