@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    implementation 'commons-codec:commons-codec:1.15'
     implementation 'com.oracle.database.jdbc:ojdbc10:19.18.0.0'
     implementation 'org.apache.httpcomponents.core5:httpcore5:5.2.1'
     implementation 'org.projectlombok:lombok:1.18.22'

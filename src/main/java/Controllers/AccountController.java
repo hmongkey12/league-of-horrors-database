@@ -45,7 +45,7 @@ public class AccountController implements HttpHandler {
         JSONObject requestBodyJsonFormat = (JSONObject) jsonParser.parse(new String(requestBodyData));
         try {
             AccountRepository accountRepository = new AccountRepository();
-            accountRepository.addUser("alice", "1234");
+            accountRepository.addUser("jon", "1234");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -63,7 +63,7 @@ public class AccountController implements HttpHandler {
         String userName = null;
         String password = null;
         AccountRepository accountRepository = new AccountRepository();
-        accountRepository.getUser();
+        accountRepository.getUser("jon", "1234");
         if (query != null) {
             String[] pairs = query.split("&");
             for (String pair : pairs) {
