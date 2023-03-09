@@ -1,41 +1,121 @@
 package Repositories;
 
+import org.apache.commons.codec.binary.Hex;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.*;
-import java.util.Base64;
 
 public class AccountRepository {
+    private static final String HASH_ALGORITHM = "SHA-256";
     private String ORACLE_DATABASE_URL = "jdbc:oracle:thin:@localhost:1521/XEPDB1";
-    private Connection databaseConnection;
+    private static Connection databaseConnection;
     String SCHEMA = "bob";
     String SCHEMA_PASSWORD = "1234";
 
     public AccountRepository() throws ClassNotFoundException, SQLException {
-        Class.forName("oracle.jdbc.driver.OracleDriver");
-        Connection databaseConnection = DriverManager.getConnection(ORACLE_DATABASE_URL, SCHEMA, SCHEMA_PASSWORD);
+        try{
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+            databaseConnection = DriverManager.getConnection(ORACLE_DATABASE_URL, SCHEMA, SCHEMA_PASSWORD);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void addUser(String username, String password) throws SQLException {
-        String query = "INSERT INTO users (username, password, salt) VALUES (?, ?, ?)";
+    public void addUser(String username, String userPassword) throws SQLException {
+        int tableSize = getSizeOfTable();
         String salt = generateSalt();
+        String hashedSaltedPassword = hashSaltAndPassword(userPassword, salt);
+        String query = "INSERT INTO users (username, password, salt, userid) VALUES (?, ?, ?, ?)";
         PreparedStatement preparedStatement = databaseConnection.prepareStatement(query);
+        System.out.println("username: " + username + " pass: " + hashedSaltedPassword + " salt: " + salt);
         preparedStatement.setString(1, username);
-        preparedStatement.setString(2, password);
+        preparedStatement.setString(2, hashedSaltedPassword);
         preparedStatement.setString(3, salt);
+        preparedStatement.setInt(4, tableSize + 1);
         preparedStatement.executeUpdate();
     }
 
-    public void getUser() throws SQLException {
-        Statement statement = databaseConnection.createStatement();
-        ResultSet resultSet = statement.executeQuery("SELECT * FROM testdb WHERE name='dummy'");
-        System.out.println(resultSet);
+    public void getUser(String username, String password) {
+        if (authenticate(username, password)) {
+            System.out.println("auth success");
+        } else {
+            System.out.println("auth failed");
+        }
+    }
+
+    public void getUsers() {
+        try {
+            Statement statement = databaseConnection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while(resultSet.next()) {
+                int userid = resultSet.getInt("userid");
+                String username = resultSet.getString("username");
+            }
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String generateSalt() {
         SecureRandom random = new SecureRandom();
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[8];
         random.nextBytes(salt);
-        return Base64.getEncoder().encodeToString(salt);
+        return Hex.encodeHexString(salt);
     }
 
+    private static String hashSaltAndPassword(String password, String salt) {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance(HASH_ALGORITHM);
+            String saltedPassword = password + salt;
+            byte[] hashedPassword = messageDigest.digest(saltedPassword.getBytes());
+            return Hex.encodeHexString(hashedPassword);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static int getSizeOfTable() {
+        try {
+            Statement statement = databaseConnection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM users");
+            if (resultSet.next()) {
+               return resultSet.getInt(1) + 1;
+            } else {
+                return 1;
+            }
+        }catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean authenticate(String username, String password) {
+        try {
+            PreparedStatement preparedStatement =
+                    databaseConnection.prepareStatement("SELECT * FROM users WHERE username=?");
+            preparedStatement.setString(1, username);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            String hashedPasswordFromDatabase;
+            String hashedPasswordFromUser;
+            String salt;
+            if (resultSet.next()) {
+                hashedPasswordFromDatabase = resultSet.getString("password");
+                salt = resultSet.getString("salt");
+                hashedPasswordFromUser = hashSaltAndPassword(password, salt);
+                if (hashedPasswordFromDatabase.equals(hashedPasswordFromUser)) {
+                    return true;
+                }
+
+            }
+            return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
 }

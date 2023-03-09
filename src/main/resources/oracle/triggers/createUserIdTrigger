@@ -1,0 +1,6 @@
+create or replace trigger createUserIdTrigger
+   before insert on users
+   for each row
+   begin
+    :new.userid := createUserId;
+   end;
