@@ -53,7 +53,6 @@ public class AccountController implements HttpHandler {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-        System.out.println("ended");
         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, 0);
     }
 
@@ -63,7 +62,8 @@ public class AccountController implements HttpHandler {
         String userName = null;
         String password = null;
         AccountRepository accountRepository = new AccountRepository();
-        accountRepository.getUser("jon", "1234");
+        int responseCode = HttpURLConnection.HTTP_UNAUTHORIZED;
+        String response = "";
         if (query != null) {
             String[] pairs = query.split("&");
             for (String pair : pairs) {
@@ -76,15 +76,15 @@ public class AccountController implements HttpHandler {
                     }
                 }
             }
+            if (accountRepository.getUser(userName, password)) {
+                responseCode = HttpURLConnection.HTTP_OK;
+            }
         }
-        String response = "Hello" + userName + " Your password is " + password;
-        exchange.sendResponseHeaders(200, response.length());
-        System.out.println(response);
+        exchange.sendResponseHeaders(responseCode, 0);
+        System.out.println(responseCode);
         OutputStream outputStream = exchange.getResponseBody();
         outputStream.write(response.getBytes());
         outputStream.flush();
         outputStream.close();
     }
-
-
 }
