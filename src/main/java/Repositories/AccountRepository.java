@@ -39,11 +39,11 @@ public class AccountRepository {
         preparedStatement.executeUpdate();
     }
 
-    public void getUser(String username, String password) {
+    public boolean getUser(String username, String password) {
         if (authenticate(username, password)) {
-            System.out.println("auth success");
+            return true;
         } else {
-            System.out.println("auth failed");
+            return false;
         }
     }
 
@@ -110,7 +110,6 @@ public class AccountRepository {
                 if (hashedPasswordFromDatabase.equals(hashedPasswordFromUser)) {
                     return true;
                 }
-
             }
             return false;
         } catch (SQLException e) {
