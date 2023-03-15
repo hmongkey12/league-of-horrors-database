@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class AccountController implements HttpHandler {
 
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
     public AccountController(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
@@ -112,7 +112,6 @@ public class AccountController implements HttpHandler {
             }
         }
         exchange.sendResponseHeaders(responseCode, 0);
-        System.out.println(responseCode);
         OutputStream outputStream = exchange.getResponseBody();
         outputStream.write(response.getBytes());
         outputStream.flush();
