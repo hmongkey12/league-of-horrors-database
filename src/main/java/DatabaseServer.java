@@ -4,7 +4,6 @@ import Controllers.AccountController;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.sql.SQLException;
 import java.util.concurrent.*;
 
 public class DatabaseServer {
